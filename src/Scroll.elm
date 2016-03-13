@@ -1,94 +1,90 @@
 module Scroll
-    ( scrollY
-    , Direction(Up, Down), (=>)
+    ( move, y
+    , Direction(Up, Down), direction
     , Event(Update,Trigger)
-    , eventsTrigger, Transition, Boundary
+    , eventsBuilder, Move
+    , crossing, up, down, over
     )
     where
+{-| This Library is to aid in managing scroll events
+
+# Signals
+@docs move, y 
+
+# Types
+@docs Event, Direction, Move
+
+# Building event groups
+@docs eventsBuilder
+
+# Helpers
+@docs direction, crossing, up, down, over
+-}
 
 import Native.Scroll
 import Signal
-import Basics exposing (snd)
+import List exposing (foldl)
+import Basics exposing (snd, identity)
 import Effects exposing (Effects, batch)
 
+{-| Contains the previous and current scroll positions. -}
+move : Signal Move
+move =
+    Native.Scroll.move
 
-transition : Signal Transition
-transition =
-    Native.Scroll.transition
-
-
+{-| The current y scroll position. -}
 y : Signal Float
 y =
-    Signal.map snd transition
+    Signal.map snd move
 
-
+{-| -}
 type Direction
     = Up
     | Down
 
-
-type alias Boundary =
-    Float
-
-
+{-| -}
 type Event m a
     = Update (m -> m)
     | Trigger (Effects a)
 
-
-type alias Transition =
+{-| -}
+type alias Move =
     (Float, Float)
 
-
-(=>) : Transition -> Direction
-(=>) (from, to) =
+{-| -}
+direction : Move -> Direction
+direction (from, to) =
     if from < to then
         Down
     else
         Up
 
 
-crossing : Boundary -> Transition -> Maybe Direction
-crossing boundary (from, to) =
+
+{-| -}
+eventsBuilder : List (Move -> Maybe (Event m a)) -> Move -> (m -> m, Effects a)
+eventsBuilder list move =
     let
-        ratio =
-            (boundary - from) / (to - from)
-
-        crossed =
-            0 <= ratio && ratio <= 1
-    in
-        if crossed then
-            Just (from => to)
-        else
-            Nothing
-
-
-eventsTrigger : List (Transition -> Maybe (Event m a)) -> Transition -> (m -> m, Effects a)
-eventsTrigger list transition =
-    let
-        filter =
-            scrollEventFilter transition
-
         events =
-            List.filterMap filter list
+            List.filterMap (\a -> a move) list
         
         updates =
             List.filterMap
-                triggerUpdateFilter
+                updateFilter
                 events
 
-        newModel =
+        modelUpdate =
             foldl
-                (\update m -> update m)
-                model
+                (<<)
+                identity
                 updates
 
         fx =
             List.filterMap
-                triggerEffectFilter
+                triggerFilter
                 events
     in
-        (newModel, Effects.batch fx)
+        (modelUpdate, Effects.batch fx)
 
 
 triggerFilter : Event m a -> Maybe (Effects a)
@@ -107,3 +103,58 @@ updateFilter event =
             Just update
         _ ->
             Nothing
+
+{-|  -}
+crossing : Float -> Move -> Maybe Direction
+crossing line (from, to) =
+    let
+        ratio =
+            (line - from) / (to - from)
+
+        crossed =
+            0 <= ratio && ratio <= 1
+    in
+        if crossed then
+            Just (direction (from, to))
+        else
+            Nothing
+
+{-| -}
+up : Float -> Event m a -> Move -> Maybe (Event m a)
+up line event move =
+    let
+        direction =
+            crossing line move
+    in
+        case direction of
+            Just Up ->
+                Just event
+            _ ->
+                Nothing
+
+{-| -}
+down : Float -> Event m a -> Move -> Maybe (Event m a)
+down line event move =
+    let
+        direction =
+            crossing line move
+    in
+        case direction of
+            Just Down ->
+                Just event
+            _ ->
+                Nothing
+
+
+{-| -}
+over : Float -> Event m a -> Move -> Maybe (Event m a)
+over line event move =
+    let
+        direction =
+            crossing line move
+    in
+        case direction of
+            Just x ->
+                Just event
+            _ ->
+                Nothing   
