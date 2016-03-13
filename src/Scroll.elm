@@ -2,7 +2,7 @@ module Scroll
     ( scrollY
     , Direction(Up, Down), (=>)
     , Event(Update,Trigger)
-    , triggerEvents, ScrollEvent, Transition, Boundary
+    , eventsTrigger, Transition, Boundary
     )
     where
 
@@ -91,20 +91,8 @@ eventsTrigger list transition =
         (newModel, Effects.batch fx)
 
 
-eventTriggerFilter : Transition -> ScrollEvent m a -> Maybe (Event m a)
-eventTriggerFilter (from, to) (line, direction, event) =
-    let
-        crossed =
-            cross line from to
-    in
-        if crossed && dir == direction then
-            Just event
-        else
-            Nothing
-
-
-triggerEffectFilter : Event m a -> Maybe (Effects a)
-triggerEffectFilter event =
+triggerFilter : Event m a -> Maybe (Effects a)
+triggerFilter event =
     case event of
         Trigger effect ->
             Just effect
@@ -112,8 +100,8 @@ triggerEffectFilter event =
             Nothing
 
 
-triggerUpdateFilter : Event m a -> Maybe (m -> m)
-triggerUpdateFilter event =
+updateFilter : Event m a -> Maybe (m -> m)
+updateFilter event =
     case event of
         Update update ->
             Just update
