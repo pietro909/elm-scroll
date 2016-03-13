@@ -1,5 +1,5 @@
 module Scroll
-    ( scroll
+    ( scrollY
     , Direction(Up, Down), (=>)
     , Event(Update,Trigger)
     , triggerEvents, ScrollEvent, Transition, Boundary
@@ -7,12 +7,19 @@ module Scroll
     where
 
 import Native.Scroll
+import Signal
+import Basics exposing (snd)
 import Effects exposing (Effects, batch)
 
 
-scroll : Signal Transition
-scroll =
-    scroll
+transition : Signal Transition
+transition =
+    Native.Scroll.transition
+
+
+y : Signal Float
+y =
+    Signal.map snd transition
 
 
 type Direction
@@ -29,10 +36,6 @@ type Event m a
     | Trigger (Effects a)
 
 
-type alias ScrollEvent m a =
-    (Boundary, Direction, Event m a)
-
-
 type alias Transition =
     (Float, Float)
 
@@ -45,11 +48,11 @@ type alias Transition =
         Up
 
 
-cross : Boundary -> Transition -> Maybe Direction
-cross line (from, to) =
+crossing : Boundary -> Transition -> Maybe Direction
+crossing boundary (from, to) =
     let
         ratio =
-            (line - from) / (to - from)
+            (boundary - from) / (to - from)
 
         crossed =
             0 <= ratio && ratio <= 1
@@ -60,8 +63,8 @@ cross line (from, to) =
             Nothing
 
 
-triggerEvents : m -> List (ScrollEvent m a) -> Transition -> (m, Effects a)
-triggerEvents model list transition =
+eventsTrigger : List (Transition -> Maybe (Event m a)) -> Transition -> (m -> m, Effects a)
+eventsTrigger list transition =
     let
         filter =
             scrollEventFilter transition
@@ -88,8 +91,8 @@ triggerEvents model list transition =
         (newModel, Effects.batch fx)
 
 
-triggerEventFilter : Transition -> ScrollEvent m a -> Maybe (Event m a)
-triggerEventFilter (from, to) (line, direction, event) =
+eventTriggerFilter : Transition -> ScrollEvent m a -> Maybe (Event m a)
+eventTriggerFilter (from, to) (line, direction, event) =
     let
         crossed =
             cross line from to
