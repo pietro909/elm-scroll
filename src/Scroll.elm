@@ -1,8 +1,8 @@
 module Scroll
     ( move, y
     , Direction(Up, Down), direction
-    , Event(Update,Trigger)
-    , eventsBuilder, Move
+    , Event, trigger, update
+    , events, Move
     , crossing, up, down, over
     )
     where
@@ -12,10 +12,13 @@ module Scroll
 @docs move, y 
 
 # Types
-@docs Event, Direction, Move
+@docs Event, Move, Direction
 
-# Building event groups
-@docs eventsBuilder
+# Events
+@docs update, trigger
+
+# Building groups of events
+@docs events
 
 # Helpers
 @docs direction, crossing, up, down, over
@@ -37,21 +40,34 @@ y : Signal Float
 y =
     Signal.map snd move
 
-{-| -}
+{-| Helps building your own triggers if direction is important.
+
+    upAfterDown : Direction -> Event m a ->  Maybe (Event m a)
+    upAfterDown lastDirection event =
+        if lastDirection == Scroll.Down then
+            Just event
+        else
+            Nothing
+
+    scrollEvents : Model -> Move -> (m -> m, Effects a)
+    scrollEvents model =
+        Scroll.events
+            [ upAfterDown model.lastDirection <| Effects.tick TopBarDrop ] 
+-}
 type Direction
     = Up
     | Down
 
-{-| -}
+{-| An event can either update a model or trigger an effect -}
 type Event m a
     = Update (m -> m)
     | Trigger (Effects a)
 
-{-| -}
+{-| Alias of (Float, Float) meant as (from, to) -}
 type alias Move =
     (Float, Float)
 
-{-| -}
+{-| Returns the directions of a Move-}
 direction : Move -> Direction
 direction (from, to) =
     if from < to then
@@ -62,8 +78,8 @@ direction (from, to) =
 
 
 {-| -}
-eventsBuilder : List (Move -> Maybe (Event m a)) -> Move -> (m -> m, Effects a)
-eventsBuilder list move =
+events : List (Move -> Maybe (Event m a)) -> Move -> (m -> m, Effects a)
+events list move =
     let
         events =
             List.filterMap (\a -> a move) list
@@ -104,7 +120,7 @@ updateFilter event =
         _ ->
             Nothing
 
-{-|  -}
+{-| -}
 crossing : Float -> Move -> Maybe Direction
 crossing line (from, to) =
     let
@@ -157,4 +173,14 @@ over line event move =
             Just x ->
                 Just event
             _ ->
-                Nothing   
+                Nothing
+
+{-| -}
+trigger : Effects a -> Event m a
+trigger effects =
+    Trigger effects
+
+{-| -}
+update : (m -> m) -> Event m a
+update u =
+    Update u
