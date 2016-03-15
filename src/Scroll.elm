@@ -42,17 +42,14 @@ y =
 
 {-| Helps building your own triggers if direction is important.
 
-    upAfterDown : Direction -> Event m a ->  Maybe (Event m a)
-    upAfterDown lastDirection event =
-        if lastDirection == Scroll.Down then
+    upAfterDown : Direction -> Event m a -> Move ->  Maybe (Event m a)
+    upAfterDown lastDirection event move =
+        if direction move != Up then
+            Nothing 
+        else if lastDirection == Scroll.Down  then
             Just event
         else
-            Nothing
-
-    scrollEvents : Model -> Move -> (m -> m, Effects a)
-    scrollEvents model =
-        Scroll.events
-            [ upAfterDown model.lastDirection <| Effects.tick TopBarDrop ] 
+            Nothing 
 -}
 type Direction
     = Up
@@ -63,11 +60,12 @@ type Event m a
     = Update (m -> m)
     | Trigger (Effects a)
 
-{-| Alias of (Float, Float) meant as (from, to) -}
+{-| Alias of (Float, Float) represents a move from a scroll position
+to another scroll position -}
 type alias Move =
     (Float, Float)
 
-{-| Returns the directions of a Move-}
+{-| Returns the direction of a Move-}
 direction : Move -> Direction
 direction (from, to) =
     if from < to then
@@ -77,7 +75,28 @@ direction (from, to) =
 
 
 
-{-| -}
+{-| Used in generating a function to trigger all possible events for a single
+move. It returns a tuple containing a Model -> Model function that is a chain of
+all the possible updates and a batch of all trigger effects.
+
+    scrollEvents : Model -> Move -> (m -> m, Effects a)
+    scrollEvents model =
+        Scroll.events
+            [ upAfterDown model.lastDirection <| trigger <| Effects.tick TopBarDrop
+            , over 400.0 <| update <| toggleProperty
+            ]
+
+    update action model =
+        case action of
+            Transition move ->
+                let
+                    (updateModel, fx) =
+                        scrollEvents model move
+                in
+                    (updateModel model, fx)
+            TopBarDrop clockTime ->
+-}
+
 events : List (Move -> Maybe (Event m a)) -> Move -> (m -> m, Effects a)
 events list move =
     let
@@ -120,7 +139,7 @@ updateFilter event =
         _ ->
             Nothing
 
-{-| -}
+{-| Returns Nothing if the Move does not cross the line-}
 crossing : Float -> Move -> Maybe Direction
 crossing line (from, to) =
     let
@@ -128,14 +147,14 @@ crossing line (from, to) =
             (line - from) / (to - from)
 
         crossed =
-            0 <= ratio && ratio <= 1
+            0 <= ratio && ratio < 1
     in
         if crossed then
             Just (direction (from, to))
         else
             Nothing
 
-{-| -}
+{-| Returns event if move crosses the line down-}
 up : Float -> Event m a -> Move -> Maybe (Event m a)
 up line event move =
     let
@@ -148,7 +167,7 @@ up line event move =
             _ ->
                 Nothing
 
-{-| -}
+{-| Returns event if move crosses the line down -}
 down : Float -> Event m a -> Move -> Maybe (Event m a)
 down line event move =
     let
@@ -162,7 +181,7 @@ down line event move =
                 Nothing
 
 
-{-| -}
+{-| Returns event if move crosses the line in either direction-}
 over : Float -> Event m a -> Move -> Maybe (Event m a)
 over line event move =
     let
@@ -175,12 +194,12 @@ over line event move =
             _ ->
                 Nothing
 
-{-| -}
+{-| Creates an Event _ a-}
 trigger : Effects a -> Event m a
 trigger effects =
     Trigger effects
 
-{-| -}
+{-| Creates an Event m _-}
 update : (m -> m) -> Event m a
 update u =
     Update u
