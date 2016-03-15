@@ -11,25 +11,26 @@ Elm.Native.Scroll.make = function(localRuntime) {
 	var NS = Elm.Native.Signal.make(localRuntime);
 	var Utils = Elm.Native.Utils.make(localRuntime);
 
-	var node = localRuntime.isFullscreen()
-		? window
-		: localRuntime.node;
+	var node = localRuntime.node;
 
-	var getY = function() {
-		return node.pageYoffset || node.scrollY || 0;
-	};
+	var y = node.pageYoffset || node.scrollTop;
+	var move = NS.input('Scroll.move', Utils.Tuple2(y, y));
 
-	var y = getY();
-	var transition = NS.input('Scroll.transition', Utils.Tuple2(y, y));
-
-
-	localRuntime.addListener([transition.id], node, 'onscroll', function onscroll() {
-		var y = getY();
-		var oldY = transition.value._1;
-		localRuntime.notify(transition.id, Utils.Tuple2(oldY, y));
-	});
+	if (localRuntime.isFullscreen()) {
+		window.onscroll = function() {
+			var y = window.pageYoffset || document.body.scrollTop;
+			var oldY = move.value._1;
+			localRuntime.notify(move.id, Utils.Tuple2(oldY, y));
+		};
+	} else {
+		localRuntime.addListener([move.id], node, 'onscroll', function onscroll() {
+			var y = node.pageYoffset || node.scrollTop;
+			var oldY = move.value._1;
+			localRuntime.notify(move.id, Utils.Tuple2(oldY, y));	
+		});
+	}
 
 	return localRuntime.Native.Scroll.values = {
-		transition: transition
+		move: move
 	};
 };
