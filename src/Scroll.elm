@@ -1,15 +1,13 @@
 module Scroll
-    ( move, y
-    , Direction(Up, Down), direction
+    ( Direction(Up, Down), direction
     , Event, trigger, update
-    , events, Move
-    , crossing, up, down, over
+    , handlers, Move
+    , crossing, crossUp, crossDown, crossOver
     )
     where
-{-| This Library is to aid in managing scroll events
 
-# Signals
-@docs move, y 
+
+{-| This Library is to aid in managing scroll events
 
 # Types
 @docs Event, Move, Direction
@@ -18,27 +16,18 @@ module Scroll
 @docs update, trigger
 
 # Building groups of events
-@docs events
+@docs handlers
 
 # Helpers
-@docs direction, crossing, up, down, over
+@docs direction, crossing, crossUp, crossDown, crossOver
 -}
 
-import Native.Scroll
+
 import Signal
 import List exposing (foldl)
 import Basics exposing (snd, identity)
 import Effects exposing (Effects, batch)
 
-{-| Contains the previous and current scroll positions. -}
-move : Signal Move
-move =
-    Native.Scroll.move
-
-{-| The current y scroll position. -}
-y : Signal Float
-y =
-    Signal.map snd move
 
 {-| Helps building your own triggers if direction is important.
 
@@ -51,19 +40,36 @@ y =
         else
             Nothing 
 -}
+
+
 type Direction
     = Up
     | Down
+
 
 {-| An event can either update a model or trigger an effect -}
 type Event m a
     = Update (m -> m)
     | Trigger (Effects a)
 
+
+{-| Creates an Event _ a-}
+trigger : Effects a -> Event m a
+trigger effects =
+    Trigger effects
+
+
+{-| Creates an Event m _-}
+update : (m -> m) -> Event m a
+update u =
+    Update u
+
+
 {-| Alias of (Float, Float) represents a move from a scroll position
 to another scroll position -}
 type alias Move =
     (Float, Float)
+
 
 {-| Returns the direction of a Move-}
 direction : Move -> Direction
@@ -72,7 +78,6 @@ direction (from, to) =
         Down
     else
         Up
-
 
 
 {-| Used in generating a function to trigger all possible events for a single
@@ -97,8 +102,9 @@ all the possible updates and a batch of all trigger effects.
             TopBarDrop clockTime ->
 -}
 
-events : List (Move -> Maybe (Event m a)) -> Move -> (m -> m, Effects a)
-events list move =
+
+handlers : List (Move -> Maybe (Event m a)) -> Move -> (m -> m, Effects a)
+handlers list move =
     let
         events =
             List.filterMap (\a -> a move) list
@@ -139,6 +145,7 @@ updateFilter event =
         _ ->
             Nothing
 
+
 {-| Returns Nothing if the Move does not cross the line-}
 crossing : Float -> Move -> Maybe Direction
 crossing line (from, to) =
@@ -154,9 +161,10 @@ crossing line (from, to) =
         else
             Nothing
 
+
 {-| Returns event if move crosses the line down-}
-up : Float -> Event m a -> Move -> Maybe (Event m a)
-up line event move =
+crossUp : Float -> Event m a -> Move -> Maybe (Event m a)
+crossUp line event move =
     let
         direction =
             crossing line move
@@ -164,12 +172,14 @@ up line event move =
         case direction of
             Just Up ->
                 Just event
+
             _ ->
                 Nothing
 
+
 {-| Returns event if move crosses the line down -}
-down : Float -> Event m a -> Move -> Maybe (Event m a)
-down line event move =
+crossDown : Float -> Event m a -> Move -> Maybe (Event m a)
+crossDown line event move =
     let
         direction =
             crossing line move
@@ -177,13 +187,14 @@ down line event move =
         case direction of
             Just Down ->
                 Just event
+
             _ ->
                 Nothing
 
 
 {-| Returns event if move crosses the line in either direction-}
-over : Float -> Event m a -> Move -> Maybe (Event m a)
-over line event move =
+crossOver : Float -> Event m a -> Move -> Maybe (Event m a)
+crossOver line event move =
     let
         direction =
             crossing line move
@@ -193,13 +204,3 @@ over line event move =
                 Just event
             _ ->
                 Nothing
-
-{-| Creates an Event _ a-}
-trigger : Effects a -> Event m a
-trigger effects =
-    Trigger effects
-
-{-| Creates an Event m _-}
-update : (m -> m) -> Event m a
-update u =
-    Update u
