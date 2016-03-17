@@ -1,7 +1,7 @@
 module Scroll
     ( Direction(Up, Down), direction
     , Event, trigger, update
-    , handlers, Move
+    , handle, Move
     , crossing, crossUp, crossDown, crossOver
     )
     where
@@ -16,7 +16,7 @@ module Scroll
 @docs update, trigger
 
 # Building groups of events
-@docs handlers
+@docs handle
 
 # Helpers
 @docs direction, crossing, crossUp, crossDown, crossOver
@@ -103,8 +103,8 @@ all the possible updates and a batch of all trigger effects.
 -}
 
 
-handlers : List (Move -> Maybe (Event m a)) -> Move -> (m -> m, Effects a)
-handlers list move =
+handle : List (Move -> Maybe (Event m a)) -> Move -> (m -> m, Effects a)
+handle list move =
     let
         events =
             List.filterMap (\a -> a move) list

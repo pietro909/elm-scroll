@@ -3,34 +3,61 @@
 An Elm Library for scrolling through a page and handling events. 
  Meant to be used alongside StartApp.
 
-## Example
+## Usage
+
+### index.html
+
+```html
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Adam Brykajlo</title>
+	<link rel="stylesheet" type="text/css" href="css/main.css">
+	<script type="text/javascript" src="js/main.js"></script>
+</head>
+<body>
+<div id="main"></div>
+<script>
+	var scroll = window.pageYOffset || document.body.scrollTop;
+	var myApp = Elm.fullscreen(Elm.Main, {scroll: [scroll,scroll]});
+
+	window.onscroll = function() {
+		var newScroll = window.pageYOffset || document.body.scrollTop;
+		myApp.ports.scroll.send([scroll, newScroll]);
+		scroll = newScroll;
+	};
+</script>
+</body>
+</html>
+
+```
+
+### Inside Elm file
 
 ```elm
-import StartApp
-import Scroll exposing (eventsBuilder)
-import Signal
+port scroll : Signal Scroll.Move
 
-type Action
-	= Header Scroll.Move
-
+-- app definition
 app =
-	{ init = init
+	{ init = init 
 	, view = view
 	, update = update
-	, inputs = [ Signal.map Header Scroll.move ]
+	, inputs = [ Signal.map ScrollAction scroll ]
 	}
 
-update action model =
-	case action of
-		Header transition ->
-			let
-				(updateModel, fx) =
-					eventsBuilder
-						[ Scroll.down 400 (\m -> { m | isFixed = True })
-						, Scroll.up 400 (\m -> { m | isFixed = False })
-						]
-						transition
-			in
-				(updateModel model, fx)
-
+-- inside update
+ScrollAction move ->
+	let
+		(updateModel, fx) =
+			Scroll.handle
+				[ Scroll.update
+					(\m -> { m | isFixed = True })
+					|> Scroll.crossDown 400
+				, Scroll.update
+					(\m -> { m | isFixed = False })
+					|> Scroll.crossUp 400
+				]
+				move
+	in
+		(updateModel model, fx)
 ```

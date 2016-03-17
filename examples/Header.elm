@@ -1,8 +1,9 @@
 import StartApp
-import Scroll exposing (events)
+import Scroll exposing (events, Move)
 import Signal
 import Html exposing (..)
 import Html.Attributes exposing (..)
+import Html.Animation as UI
 import Task exposing (Task)
 import Effects exposing (Never)
 
@@ -15,7 +16,7 @@ app =
         { init = init
         , view = view
         , update = update
-        , inputs = [ Signal.map Header Scroll.move ]
+        , inputs = [ Signal.map Header scroll ]
         }
 
 
@@ -23,11 +24,14 @@ port tasks : Signal (Task Never ())
 port tasks = app.tasks
 
 type Action
-    = Header Scroll.Move
+    = Header Move
+    | Shrink
+    | Grow
+    | Animate UI.Action
 
 
 type alias Model =
-    { isSmall : Bool }
+    { style : UI.Animation }
 
 
 init = (Model False, Effects.none)
@@ -35,7 +39,7 @@ init = (Model False, Effects.none)
 
 update action model =
     case action of
-        Header transition ->
+        Header move ->
             let
                 (updateModel, fx) =
                     events
@@ -49,3 +53,6 @@ update action model =
 
 view address model =
     div [] []
+
+
+port scroll : Signal Move
