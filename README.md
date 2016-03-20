@@ -3,6 +3,12 @@
 An Elm Library for scrolling through a page and handling events. 
  Meant to be used alongside StartApp.
 
+## Example
+
+Header effects 
+\( [demo](http://abrykajlo.github.io/elm-scroll/examples/header.html) /
+ [code](https://github.com/abrykajlo/elm-scroll/blob/master/examples/Header.elm) \)
+
 ## Usage
 
 ### index.html
@@ -45,23 +51,14 @@ app =
 	, inputs = [ Signal.map ScrollAction scroll ]
 	}
 
--- inside update
-ScrollAction move ->
-	let
-		(updateModel, fx) =
-			Scroll.handle
-				[ Scroll.update
-					(\m -> { m | isFixed = True })
-					|> Scroll.crossDown 400
-				, Scroll.update
-					(\m -> { m | isFixed = False })
-					|> Scroll.crossUp 400
-				]
-				move
-	in
-		(updateModel model, fx)
+update action model =
+	case action of
+		ScrollAction move ->
+            Scroll.handle
+                [ update Grow
+                  |> Scroll.onCrossDown 400
+                , update Shrink
+                  |> Scroll.onCrossUp 400
+                ]
+                move model
 ```
-
-## TODO
-
-+ 
