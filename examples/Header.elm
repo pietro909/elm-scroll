@@ -7,6 +7,7 @@ import Html.Animation as UI
 import Html.Animation.Properties exposing (..)
 import Task exposing (Task)
 import Effects exposing (Never)
+import Time exposing (second)
 
 main =
     app.html
@@ -52,6 +53,7 @@ update action model =
             onModel model action
         Grow ->
             UI.animate
+                |> UI.duration (2*second)
                 |> UI.props
                     [ Height (UI.to 200) Px ]
                 |> onModel model
