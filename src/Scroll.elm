@@ -1,8 +1,7 @@
 module Scroll
     ( Direction(Up, Down), direction
-    , Event, trigger, update
     , handle, Move
-    , crossing, crossUp, crossDown, crossOver
+    , crossing, onCrossUp, onCrossDown, onCrossOver
     )
     where
 
@@ -10,16 +9,13 @@ module Scroll
 {-| This Library is to aid in managing scroll events
 
 # Types
-@docs Event, Move, Direction
-
-# Events
-@docs update, trigger
+@docs Update, Move, Direction
 
 # Building groups of events
 @docs handle
 
 # Helpers
-@docs direction, crossing, crossUp, crossDown, crossOver
+@docs direction, crossing, onCrossUp, onCrossDown, onCrossOver
 -}
 
 
@@ -27,6 +23,10 @@ import Signal
 import List exposing (foldl)
 import Basics exposing (snd, identity)
 import Effects exposing (Effects, batch)
+
+
+type alias Update m a =
+    m -> (m, Effects a)
 
 
 {-| Helps building your own triggers if direction is important.
@@ -40,29 +40,9 @@ import Effects exposing (Effects, batch)
         else
             Nothing 
 -}
-
-
 type Direction
     = Up
     | Down
-
-
-{-| An event can either update a model or trigger an effect -}
-type Event m a
-    = Update (m -> m)
-    | Trigger (Effects a)
-
-
-{-| Creates an Event _ a-}
-trigger : Effects a -> Event m a
-trigger effects =
-    Trigger effects
-
-
-{-| Creates an Event m _-}
-update : (m -> m) -> Event m a
-update u =
-    Update u
 
 
 {-| Alias of (Float, Float) represents a move from a scroll position
@@ -101,49 +81,23 @@ all the possible updates and a batch of all trigger effects.
                     (updateModel model, fx)
             TopBarDrop clockTime ->
 -}
-
-
-handle : List (Move -> Maybe (Event m a)) -> Move -> (m -> m, Effects a)
-handle list move =
+handle : List (Move -> Maybe (Update m a)) -> Move -> m -> (m, Effects a)
+handle events move model =
     let
-        events =
-            List.filterMap (\a -> a move) list
-        
         updates =
-            List.filterMap
-                updateFilter
-                events
+            List.filterMap (\event -> event move) events
+        
+        f update (model, fx) =
+            let
+                (newModel, effect) =
+                    update model
+            in
+                (newModel, fx ++ [effect])
 
-        modelUpdate =
-            foldl
-                (<<)
-                identity
-                updates
-
-        fx =
-            List.filterMap
-                triggerFilter
-                events
+        (newModel, fx) =
+            foldl f (model, []) updates
     in
-        (modelUpdate, Effects.batch fx)
-
-
-triggerFilter : Event m a -> Maybe (Effects a)
-triggerFilter event =
-    case event of
-        Trigger effect ->
-            Just effect
-        _ ->
-            Nothing
-
-
-updateFilter : Event m a -> Maybe (m -> m)
-updateFilter event =
-    case event of
-        Update update ->
-            Just update
-        _ ->
-            Nothing
+        (newModel, Effects.batch fx)
 
 
 {-| Returns Nothing if the Move does not cross the line-}
@@ -163,44 +117,44 @@ crossing line (from, to) =
 
 
 {-| Returns event if move crosses the line down-}
-crossUp : Float -> Event m a -> Move -> Maybe (Event m a)
-crossUp line event move =
+onCrossUp : Float -> Update m a -> Move -> Maybe (Update m a)
+onCrossUp line update move =
     let
         direction =
             crossing line move
     in
         case direction of
             Just Up ->
-                Just event
+                Just update
 
             _ ->
                 Nothing
 
 
 {-| Returns event if move crosses the line down -}
-crossDown : Float -> Event m a -> Move -> Maybe (Event m a)
-crossDown line event move =
+onCrossDown : Float -> Update m a -> Move -> Maybe (Update m a)
+onCrossDown line update move =
     let
         direction =
             crossing line move
     in
         case direction of
             Just Down ->
-                Just event
+                Just update
 
             _ ->
                 Nothing
 
 
 {-| Returns event if move crosses the line in either direction-}
-crossOver : Float -> Event m a -> Move -> Maybe (Event m a)
-crossOver line event move =
+onCrossOver : Float -> Update m a -> Move -> Maybe (Update m a)
+onCrossOver line update move =
     let
         direction =
             crossing line move
     in
         case direction of
             Just x ->
-                Just event
+                Just update
             _ ->
                 Nothing

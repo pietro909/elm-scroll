@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Adam Brykajlo</title>
+	<style>
+	html, head, body {
+		margin: 0;
+		padding: 0;
+	}
+	</style>
+	<script type="text/javascript" src="elm.js"></script>
+</head>
+<body>
+<div id="main"></div>
+<script>
+	var scroll = window.pageYOffset || document.body.scrollTop;
+	var myApp = Elm.fullscreen(Elm.Main, {scroll: [scroll,scroll]});
+
+	window.onscroll = function() {
+		var newScroll = window.pageYOffset || document.body.scrollTop;
+		myApp.ports.scroll.send([scroll, newScroll]);
+		scroll = newScroll;
+	};
+</script>
+</body>
+</html>
