@@ -3,13 +3,23 @@
 An Elm Library for scrolling through a page and handling events. 
  Meant to be used alongside StartApp.
 
-## Example
-
-Header effects 
-\( [demo](http://abrykajlo.github.io/elm-scroll/examples/header.html) /
- [code](https://github.com/abrykajlo/elm-scroll/blob/master/examples/Header.elm) \)
-
 ## Usage
+
+### Installation
+
+```
+$ elm package install abrykajlo/elm-scroll
+```
+
+### Examples
+
+```
+$ git clone https://github.com/abrykajlo/elm-scroll
+$ cd elm-scroll/examples
+$ make elm
+```
+
+Open index.html in your browser.
 
 ### index.html
 
