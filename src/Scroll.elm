@@ -1,10 +1,9 @@
-module Scroll
+module Scroll exposing
     ( Direction(Up, Down), Move, Update
     , onCrossUp, onCrossDown, onCrossOver
     , onUp, onDown, onInRange, onOverlap
     , handle, direction, crossing
     )
-    where
 
 
 {-| This Library provides helper functions for handling events on scrolling.
@@ -18,7 +17,7 @@ module Scroll
 # On Event Handlers
 Meant to be used with `Scroll.handle` to build up a list of possible events
 for an application. All of the function signatures end in
-`Move -> Maybe (Update m a)` so they can be partially applied and used with
+`Move -> Maybe (Update m msg)` so they can be partially applied and used with
 `Scroll.handle`.
 
 ## Basic
@@ -29,7 +28,7 @@ for an application. All of the function signatures end in
 
 # Helpers for Creating On Event Handlers
 You can create your own as well which can be used with handle as long
-they end in `Move -> Maybe (Update m a)`. These are some functions that
+they end in `Move -> Maybe (Update m msg)`. These are some functions that
 can aid in the creation of them.
 
 @docs direction, crossing
@@ -38,18 +37,18 @@ can aid in the creation of them.
 
 import Maybe
 import List exposing (foldl)
-import Effects exposing (Effects, batch)
+import Platform.Cmd exposing (Cmd)
 
 {-| 
-    Update m a == m -> (m, Effects a)
+    Update m msg == m -> (m, Cmd msg)
 -}
-type alias Update m a =
-    m -> (m, Effects a)
+type alias Update m msg =
+    m -> (m, Cmd msg)
 
 
 {-| Helps building your own triggers if direction is important.
 
-    upAfterDown : Direction -> Event m a -> Move ->  Maybe (Event m a)
+    upAfterDown : Direction -> Event m msg -> Move ->  Maybe (Event m msg)
     upAfterDown lastDirection event move =
         if direction move != Up then
             Nothing 
@@ -104,23 +103,23 @@ they are in the list and the effects get thrown into `Effects.batch`.
             ToggleFixBar ->
                 ...
 -}
-handle : List (Move -> Maybe (Update m a)) -> Move -> m -> (m, Effects a)
+handle : List (Move -> Maybe (Update m msg)) -> Move -> m -> (m, Cmd msg)
 handle events move model =
     let
         updates =
             List.filterMap (\event -> event move) events
         
-        f update (model, fx) =
+        f update (model, cmds) =
             let
-                (newModel, effect) =
+                (newModel, cmd) =
                     update model
             in
-                (newModel, fx ++ [effect])
+                (newModel, cmds ++ [cmd])
 
-        (newModel, fx) =
+        (newModel, cmds) =
             foldl f (model, []) updates
     in
-        (newModel, Effects.batch fx)
+        (newModel, Cmd.batch cmds)
 
 
 {-| Notifies if a `Move` crosses a line. Nothing on no 
