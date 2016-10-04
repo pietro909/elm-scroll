@@ -13,10 +13,6 @@ import Ports exposing (..)
 import Actions exposing (..)
 
 main =
-    app.html
-
-
-app =
     App.program
         { init = init
         , subscriptions = subscriptions
@@ -31,9 +27,9 @@ initialModel =
       , Animation.height (px 90)
       , Animation.backgroundColor Color.lightRed
       ]
+  , now = 0.0
   }
--- port tasks : Signal (Task Never ())
--- port tasks = app.tasks
+
 init =
   ( initialModel, Cmd.none )
   
@@ -41,37 +37,44 @@ init =
 update action model =
     case action of
         -- Grow ->
-        --     UI.animate
-        --         |> UI.duration (2*second)
-        --         |> UI.props
-        --             [ Height (UI.to 200) px ]
-        --         |> onModel model
+        --     -- Animation.animate
+        --     --     |> Animation.duration (2*second)
+        --     --     |> UI.props
+        --     --         [ Height (UI.to 200) px ]
+        --     --     |> onModel model
+
+        --     (model, Cmd.none)
         -- Shrink ->
         --   -- helper functions are no longer required
-        --   Animation.Style.animate
+        --   (model, Animation.animate
         --     -- styles are specified slightly differently.
-        --     |> Style.to
-        --         [ Height 90 px
+        --     |> Animation.to
+        --         [ Animation.height (px 90)
         --         ]
-        --     |> Style.on model.style
+        --     |> Animation.on model.style)
         Animate animMsg ->
-          { model
+          ({ model
               | style = Animation.update animMsg model.style
-          }
+          }, Cmd.none)
         Header move ->
-            Scroll.handle
-                [ update Grow
-                  |> Scroll.onCrossDown 400
-                , update Shrink
-                  |> Scroll.onCrossUp 400
-                ]
-                move model
-    
+            let
+                nums = Debug.log "move" move
+            in
+                ( { model | now = snd(nums) }, Cmd.none)
+
+            -- Scroll.handle
+            --     [ update Grow
+            --       |> Scroll.onCrossDown 400
+            --     , update Shrink
+            --       |> Scroll.onCrossUp 400
+            --     ]
+            --     move model
+
 
 view : Model -> Html a
-view address model =
-    div [] 
-        [ div 
+view model =
+    div []
+        [ div
             (Animation.render model.style ++ [ style [("position", "fixed")]])
             []
         , div [ style [("height", "10000px")] ] [] ]

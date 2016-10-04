@@ -5,9 +5,11 @@ import Scroll exposing (Move)
 
 type Action
     = Header Move
-    | Shrink
-    | Grow
+    -- | Shrink
+    -- | Grow
     | Animate Animation.Msg 
 
 type alias Model =
-    { style : Animation.State }
+    { style : Animation.State
+    , now: Float
+    }
