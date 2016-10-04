@@ -1,67 +1,63 @@
-import StartApp
+import Html
+import Html.App as App
 import Scroll exposing (Move)
-import Signal exposing (Address)
 import Html exposing (..)
 import Html.Attributes exposing (..)
-import Html.Animation as UI
-import Html.Animation.Properties exposing (..)
+import Animation exposing (px, percent, color)
+import Color exposing (Color)
+
 import Task exposing (Task)
-import Effects exposing (Never)
 import Time exposing (second)
+
+import Ports exposing (..)
+import Actions exposing (..)
 
 main =
     app.html
 
 
 app =
-    StartApp.start
+    App.program
         { init = init
-        , view = view
+        , subscriptions = subscriptions
         , update = update
-        , inputs = [ Signal.map Header scroll ]
+        , view = view
         }
 
-
-port tasks : Signal (Task Never ())
-port tasks = app.tasks
-
-type Action
-    = Header Move
-    | Shrink
-    | Grow
-    | Animate UI.Action
-
-
-type alias Model =
-    { style : UI.Animation }
-
-
-init = 
-    ( Model 
-    <| UI.init 
-        [ Width 100 Percent
-        , Height 90 Px
-        , BackgroundColor 75 75 75 1
-        ]
-    , Effects.none
-    )
-
-
+initialModel =
+  { style =
+    Animation.style
+      [ Animation.width (percent 100)
+      , Animation.height (px 90)
+      , Animation.backgroundColor Color.lightRed
+      ]
+  }
+-- port tasks : Signal (Task Never ())
+-- port tasks = app.tasks
+init =
+  ( initialModel, Cmd.none )
+  
+ 
 update action model =
     case action of
-        Animate action ->
-            onModel model action
-        Grow ->
-            UI.animate
-                |> UI.duration (2*second)
-                |> UI.props
-                    [ Height (UI.to 200) Px ]
-                |> onModel model
-        Shrink ->
-            UI.animate
-                |> UI.props
-                    [ Height (UI.to 90) Px ]
-                |> onModel model
+        -- Grow ->
+        --     UI.animate
+        --         |> UI.duration (2*second)
+        --         |> UI.props
+        --             [ Height (UI.to 200) px ]
+        --         |> onModel model
+        -- Shrink ->
+        --   -- helper functions are no longer required
+        --   Animation.Style.animate
+        --     -- styles are specified slightly differently.
+        --     |> Style.to
+        --         [ Height 90 px
+        --         ]
+        --     |> Style.on model.style
+        Animate animMsg ->
+          { model
+              | style = Animation.update animMsg model.style
+          }
         Header move ->
             Scroll.handle
                 [ update Grow
@@ -72,20 +68,20 @@ update action model =
                 move model
     
 
-
-onModel =
-    UI.forwardTo
-        Animate
-        .style
-        (\w style -> {w | style = style})
-
-
-view : Address Action -> Model -> Html
+view : Model -> Html a
 view address model =
     div [] 
-        [ div [ style <| ("position", "fixed") :: UI.render model.style ]
+        [ div 
+            (Animation.render model.style ++ [ style [("position", "fixed")]])
             []
         , div [ style [("height", "10000px")] ] [] ]
 
-
-port scroll : Signal Move
+{-- SUBSCRIPTIONS
+ -  need to collect all the inbound ports in one subscription flow
+--}
+subscriptions : Model -> Sub Action
+subscriptions model =
+    Sub.batch
+        [ scroll Header
+        , Animation.subscription Animate [ model.style ]
+        ]
