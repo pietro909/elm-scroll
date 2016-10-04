@@ -14,11 +14,12 @@
 <div id="main"></div>
 <script>
 	var scroll = window.pageYOffset || document.body.scrollTop;
-	var myApp = Elm.fullscreen(Elm.Main, {scroll: [scroll,scroll]});
+	var mountNode = document.getElementById('main');
+	var app = Elm.Main.embed(mountNode);
 
 	window.onscroll = function() {
 		var newScroll = window.pageYOffset || document.body.scrollTop;
-		myApp.ports.scroll.send([scroll, newScroll]);
+		app.ports.scroll.send([scroll, newScroll]);
 		scroll = newScroll;
 	};
 </script>

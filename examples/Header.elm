@@ -13,10 +13,6 @@ import Ports exposing (..)
 import Actions exposing (..)
 
 main =
-    app.html
-
-
-app =
     App.program
         { init = init
         , subscriptions = subscriptions
@@ -31,50 +27,73 @@ initialModel =
       , Animation.height (px 90)
       , Animation.backgroundColor Color.lightRed
       ]
+  , info =
+      { previousValue = 0.0
+      , currentValue = 0.0
+      , delta = 0.0 
+      , direction = "" 
+      }
   }
--- port tasks : Signal (Task Never ())
--- port tasks = app.tasks
+
 init =
   ( initialModel, Cmd.none )
-  
- 
+
+setDirection : String -> Model -> Model
+setDirection direction ({info} as model) = { model | info = { info | direction = direction } }
+
 update action model =
     case action of
-        -- Grow ->
-        --     UI.animate
-        --         |> UI.duration (2*second)
-        --         |> UI.props
-        --             [ Height (UI.to 200) px ]
-        --         |> onModel model
-        -- Shrink ->
-        --   -- helper functions are no longer required
-        --   Animation.Style.animate
-        --     -- styles are specified slightly differently.
-        --     |> Style.to
-        --         [ Height 90 px
-        --         ]
-        --     |> Style.on model.style
+        Grow ->
+            let
+              newModel : Model
+              newModel = setDirection "grow" model
+            in
+              (newModel, Cmd.none)
+        Shrink ->
+            let
+              newModel : Model
+              newModel = setDirection "shrink" model
+            in
+              (newModel, Cmd.none)
         Animate animMsg ->
-          { model
+          ({ model
               | style = Animation.update animMsg model.style
-          }
+          }, Cmd.none)
         Header move ->
-            Scroll.handle
-                [ update Grow
-                  |> Scroll.onCrossDown 400
-                , update Shrink
-                  |> Scroll.onCrossUp 400
-                ]
-                move model
-    
+            let
+              (previous, current) = Debug.log "move" move
+              newModel = (
+                let infoB = model.info 
+                in { model | info = { infoB 
+                  | previousValue = previous 
+                  , currentValue = current 
+                  , delta = previous - current
+                  } })
+            in
+              -- (newModel, Cmd.none)
+                Scroll.handle
+                    [ update Grow
+                      |> Scroll.onCrossDown 400
+                    , update Shrink
+                      |> Scroll.onCrossUp 400
+                    ]
+                    move newModel
+
 
 view : Model -> Html a
-view address model =
-    div [] 
-        [ div 
-            (Animation.render model.style ++ [ style [("position", "fixed")]])
-            []
-        , div [ style [("height", "10000px")] ] [] ]
+view model =
+    let
+      info = model.info
+    in
+      div []
+        [ div
+          (Animation.render model.style ++ [ style [("position", "fixed")]])
+          [ h2 [] [ text (toString info.direction) ]
+          , h3 [] [ text (toString info.previousValue) ]
+          , h3 [] [ text (toString info.currentValue) ]
+          ]
+        , div [ style [("height", "10000px")] ] [] 
+        ]
 
 {-- SUBSCRIPTIONS
  -  need to collect all the inbound ports in one subscription flow

@@ -10,4 +10,11 @@ type Action
     | Animate Animation.Msg 
 
 type alias Model =
-    { style : Animation.State }
+    { style : Animation.State
+    , info :
+      { previousValue : Float
+      , currentValue : Float
+      , delta : Float
+      , direction : String
+      }
+    }
