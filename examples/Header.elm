@@ -55,6 +55,22 @@ update action model =
               newModel = setDirection "shrink" model
             in
               (newModel, Cmd.none)
+
+              -- { style =
+              --     Animation.queue
+              --         [ Animation.to
+              --             [ Animation.left (px 300.0)
+              --             ]
+              --         ]
+              --     <|
+              --         Animation.style
+              --             [ Animation.left (px 0.0) ]
+              -- }
+
+              -- UI.animate
+              --   |> UI.props
+              --       [ Height (UI.to 90) Px ]
+              --   |> onModel model
         Animate animMsg ->
           ({ model
               | style = Animation.update animMsg model.style
@@ -70,7 +86,6 @@ update action model =
                   , delta = previous - current
                   } })
             in
-              -- (newModel, Cmd.none)
                 Scroll.handle
                     [ update Grow
                       |> Scroll.onCrossDown 400
