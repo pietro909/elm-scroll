@@ -71,6 +71,7 @@ update action model =
               --   |> UI.props
               --       [ Height (UI.to 90) Px ]
               --   |> onModel model
+
         Animate animMsg ->
           ({ model
               | style = Animation.update animMsg model.style
