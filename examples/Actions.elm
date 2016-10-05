@@ -11,6 +11,8 @@ type Action
 
 type alias Model =
     { style : Animation.State
+    , defaultStyle : Animation.State
+    , lastPostion : Float
     , info :
       { previousValue : Float
       , currentValue : Float

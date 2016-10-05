@@ -20,13 +20,15 @@ main =
         , view = view
         }
 
+defaultStyles = Animation.style
+  [ Animation.width (percent 100)
+  , Animation.backgroundColor Color.lightRed
+  ]
+
 initialModel =
-  { style =
-    Animation.style
-      [ Animation.width (percent 100)
-      , Animation.height (px 90)
-      , Animation.backgroundColor Color.lightRed
-      ]
+  { style = Animation.style [ Animation.height (px 90) ]
+  , defaultStyle = defaultStyles
+  , lastPostion = 90.0
   , info =
       { previousValue = 0.0
       , currentValue = 0.0
@@ -45,33 +47,37 @@ update action model =
     case action of
         Grow ->
             let
-              newModel : Model
-              newModel = setDirection "grow" model
+              style = 
+                  Animation.queue
+                      [ Animation.toWith
+                          (Animation.easing 
+                            { duration = 2*second
+                            , ease = (\x -> x^2)
+                            }
+                          ) 
+                          [ Animation.height (px 200) ]
+                      ]
+                  <|
+                      Animation.style
+                          [ Animation.height (px 90) ]
+              midModel = setDirection "grow" model
+              newModel = { midModel | style = style }
             in
               (newModel, Cmd.none)
         Shrink ->
             let
-              newModel : Model
-              newModel = setDirection "shrink" model
+              style = 
+                  Animation.queue
+                      [ Animation.to
+                          [ Animation.height (px 0) ]
+                      ]
+                  <|
+                      Animation.style
+                          [ Animation.height (px 90) ]
+              midModel = setDirection "shrink" model
+              newModel = { midModel | style = style }
             in
               (newModel, Cmd.none)
-
-              -- { style =
-              --     Animation.queue
-              --         [ Animation.to
-              --             [ Animation.left (px 300.0)
-              --             ]
-              --         ]
-              --     <|
-              --         Animation.style
-              --             [ Animation.left (px 0.0) ]
-              -- }
-
-              -- UI.animate
-              --   |> UI.props
-              --       [ Height (UI.to 90) Px ]
-              --   |> onModel model
-
         Animate animMsg ->
           ({ model
               | style = Animation.update animMsg model.style
@@ -100,13 +106,14 @@ view : Model -> Html a
 view model =
     let
       info = model.info
+      styles = Animation.render model.style ++ [ style [("position", "fixed")]] ++ (Animation.render defaultStyles)
     in
       div []
         [ div
-          (Animation.render model.style ++ [ style [("position", "fixed")]])
-          [ h2 [] [ text (toString info.direction) ]
-          , h3 [] [ text (toString info.previousValue) ]
-          , h3 [] [ text (toString info.currentValue) ]
+          styles 
+          [ h2 [] [ text ("direction: " ++ (toString info.direction)) ]
+          , h3 [] [ text ("previousValue: " ++ (toString info.previousValue)) ]
+          , h3 [] [ text ("currentValue: " ++ (toString info.currentValue)) ]
           ]
         , div [ style [("height", "10000px")] ] [] 
         ]
