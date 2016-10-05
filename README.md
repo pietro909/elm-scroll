@@ -83,10 +83,10 @@ Need to define at least two type of actions, one for the incoming port's message
 
 ```elm
 type Action
-    = Header Move 						-- the message emitted by the input port
-															-- brings a tuple with previous and current scroll values
-	  | Shrink 									-- message to be sent when scrollTop < 400px
-		| Grow 									  -- message to be sent when scrollTop > 400px
+    = Header Move 	      -- the message emitted by the input port
+			      -- brings a tuple with previous and current scroll values
+    | Shrink 		      -- message to be sent when scrollTop < 400px
+    | Grow 		      -- message to be sent when scrollTop > 400px
     | Animate Animation.Msg   -- animation's tick
 ```
 
