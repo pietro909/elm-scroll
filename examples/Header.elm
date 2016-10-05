@@ -7,7 +7,6 @@ import Animation exposing (px, percent, color)
 import Time exposing (second)
 
 import Ports exposing (..)
-import Actions exposing (..)
 
 
 main =
@@ -19,12 +18,23 @@ main =
         }
 
 
+type alias Model =
+    { style : Animation.State }
+
+  
 initialModel =
     { style = Animation.style [ Animation.height (px 90) ] }
 
 
 init =
     ( initialModel, Cmd.none )
+
+
+type Action
+    = Header Move
+    | Shrink
+    | Grow
+    | Animate Animation.Msg 
 
 
 update action model =
