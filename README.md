@@ -83,10 +83,10 @@ Need to define at least two type of actions, one for the incoming port's message
 
 ```elm
 type Action
-    = Header Move 	      -- the message emitted by the input port
-			      -- brings a tuple with previous and current scroll values
-    | Shrink 		      -- message to be sent when scrollTop < 400px
-    | Grow 		      -- message to be sent when scrollTop > 400px
+    = Header Move             -- the message emitted by the input port
+                              -- brings a tuple with previous and current scroll values
+    | Shrink                  -- message to be sent when scrollTop < 400px
+    | Grow                    -- message to be sent when scrollTop > 400px
     | Animate Animation.Msg   -- animation's tick
 ```
 
@@ -107,22 +107,22 @@ Finally, we need to handle properly all the messages:
 update action model =
     case action of
         Grow ->
-						-- scrolling down, under 400px
-						-- ...
-				  	(model, Cmd.none)
+	    -- scrolling down, under 400px
+	    -- ...
+	    (model, Cmd.none)
         Shrink ->
-						-- scrolling up, over 400px
-						-- ...
-						(model, Cmd.none)
+	    -- scrolling up, over 400px
+	    -- ...
+	    (model, Cmd.none)
         Animate animMsg ->
-						-- here you can apply new styles, to be animated
-						--- ...
-						(model, Cmd.none)
+	    -- here you can apply new styles, to be animated
+	    --- ...
+	    (model, Cmd.none)
         Header move ->
             Scroll.handle
-                [ update Grow 									-- when scrollTop > 400px, send Grow message
+                [ update Grow                   -- when scrollTop > 400px, send Grow message
                     |> Scroll.onCrossDown 400
-                , update Shrink 								-- when scrollTop < 400px, send Shrink message
+                , update Shrink                 -- when scrollTop < 400px, send Shrink message
                     |> Scroll.onCrossUp 400
                 ]
                 move model
