@@ -12,7 +12,7 @@ type Action
 type alias Model =
     { style : Animation.State
     , defaultStyle : Animation.State
-    , lastPostion : Float
+    , lastHeight : Float
     , info :
       { previousValue : Float
       , currentValue : Float

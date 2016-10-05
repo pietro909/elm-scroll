@@ -28,7 +28,7 @@ defaultStyles = Animation.style
 initialModel =
   { style = Animation.style [ Animation.height (px 90) ]
   , defaultStyle = defaultStyles
-  , lastPostion = 90.0
+  , lastHeight = 90.0
   , info =
       { previousValue = 0.0
       , currentValue = 0.0
@@ -60,7 +60,7 @@ update action model =
                   <|
                       Animation.style
                           [ Animation.height (px 90) ]
-              midModel = setDirection "grow" model
+              midModel = Debug.log "grow" setDirection "grow" model
               newModel = { midModel | style = style }
             in
               (newModel, Cmd.none)
@@ -74,14 +74,19 @@ update action model =
                   <|
                       Animation.style
                           [ Animation.height (px 90) ]
-              midModel = setDirection "shrink" model
+              midModel =  Debug.log "shrink" setDirection "shrink" model
               newModel = { midModel | style = style }
             in
               (newModel, Cmd.none)
         Animate animMsg ->
-          ({ model
-              | style = Animation.update animMsg model.style
-          }, Cmd.none)
+          let
+            lastHeight : Float
+            lastHeight = model.style.style
+          in
+            ({ model
+                | style = Animation.update animMsg ( Debug.log "animate" model.style )
+                , lastHeight = lastHeight
+            }, Cmd.none)
         Header move ->
             let
               (previous, current) = Debug.log "move" move
